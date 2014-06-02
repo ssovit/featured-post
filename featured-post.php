@@ -31,9 +31,9 @@ class Featured_Post
 {
     var $db = NULL;
     public $post_types = array();
-    
+
     function __construct() {
-        
+
         add_action('init', array(&$this,
             'init'
         ));
@@ -45,7 +45,7 @@ class Featured_Post
         ));
     }
     function init() {
-        
+
         add_filter('query_vars', array(&$this,
             'query_vars'
         ));
@@ -57,7 +57,7 @@ class Featured_Post
         add_filter('current_screen', array(&$this,
             'my_current_screen'
         ));
-        
+
         add_action('admin_head-edit.php', array(&$this,
             'admin_head'
         ));
@@ -82,7 +82,7 @@ class Featured_Post
     function add_views_link($views) {
         $post_type = ((isset($_GET['post_type']) && $_GET['post_type'] != "") ? $_GET['post_type'] : 'post');
         $count = $this->total_featured($post_type);
-        $class = $_GET['post_status'] == 'featured' ? "current" : '';
+        $class =  (isset($_GET['post_status']) && $_GET['post_status'] == 'featured') ? "current" : '';
         $views['featured'] = "<a class=\"" . $class . "\" id=\"featured-post-filter\" href=\"edit.php?&post_status=featured&post_type={$post_type}\">Featured <span class=\"count\">({$count})</span></a>";
         return $views;
     }
@@ -129,7 +129,7 @@ class Featured_Post
         return $columns;
     }
     function manage_posts_custom_column($column_name, $post_id) {
-        
+
         //echo "here";
         if ($column_name == 'featured') {
             $is_featured = get_post_meta($post_id, '_is_featured', true);
@@ -145,7 +145,7 @@ class Featured_Post
         }
     }
     function admin_head() {
-        
+
         echo '<script type="text/javascript">
 		jQuery(document).ready(function($){
 			$(\'.featured-post-toggle\').on("click",function(e){
@@ -164,8 +164,8 @@ class Featured_Post
 						_el.addClass(\'dashicons-star-empty\');
 					}
 					}
-				
-					
+
+
 				});
 			});
 		});
@@ -187,7 +187,7 @@ class Featured_Post
     }
     function admin_pre_get_posts($query) {
         global $wp_query;
-        if (is_admin() && $_GET['post_status'] == 'featured') {
+        if (is_admin() && isset($_GET['post_status']) && $_GET['post_status'] == 'featured') {
             $query->set('meta_key', '_is_featured');
             $query->set('meta_value', 'yes');
         }
@@ -213,7 +213,7 @@ class Featured_Post_Widget extends WP_Widget
     function __construct() {
         parent::WP_Widget(false, $name = 'Featured Post');
     }
-    
+
     function form($instance) {
         $title = esc_attr($instance['title']);
         $type = esc_attr($instance['post_type']);
@@ -238,13 +238,13 @@ class Featured_Post_Widget extends WP_Widget
         foreach ($this->post_types as $key => $post_type) {
             echo '<option value="' . $key . '"' . ($key == $type ? " selected" : "") . '>' . $key . "</option>";
         }
-        
+
         echo "</select>";
         echo "</p>";
         echo "<p>";
         echo "<label for=\"" . $this->get_field_id('num') . "\">";
         echo _e('Number To show:');
-        
+
         echo "</label>";
         echo "<input id = \"" . $this->get_field_id('num') . "\" class = \"widefat\" name = \"" . $this->get_field_name('num') . "\" type=\"text\" value =\"" . $num . "\" / >";
         echo "</p>";

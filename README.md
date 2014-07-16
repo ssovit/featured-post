@@ -29,4 +29,4 @@ To-Do
 Support & Donate
 =============
 
-Star this repository to donate on flattr, or personally contact me at sovit@ssovit.com to buy me a beer :)
+You can donate a fair amount https://gum.co/wppress-fp

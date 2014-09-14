@@ -29,4 +29,4 @@ To-Do
 Support & Donate
 =============
 
-You can donate a fair amount https://gum.co/wppress-fp
+To Support, consider donating at https://gum.co/wppress-donate

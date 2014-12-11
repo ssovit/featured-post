@@ -1,39 +1,30 @@
 <?php
-
 /*************************************************************************
-
 Plugin Name: Featured Post
 Plugin URI: http://ssovit.com/featured-post-wordpress-plugin/
 Description: Featured Post Plugin For Wordpress.
 Version: 3.2.1
 Author: Sovit Tamrakar
 Author URI: http://wppress.net
-
 **************************************************************************
-
 Copyright (C) 2010 Sovit Tamrakar(http://ssovit.com)
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 **************************************************************************/
+
 class Featured_Post
 {
     var $db = NULL;
     public $post_types = array();
-
     function __construct() {
-
         add_action('init', array(&$this,
             'init'
         ));
@@ -43,9 +34,11 @@ class Featured_Post
         add_action('wp_ajax_toggle-featured-post', array(&$this,
             'admin_ajax'
         ));
+        add_action( 'plugins_loaded', array(&$this,
+            'load_featured_textdomain'
+        ));
     }
     function init() {
-
         add_filter('query_vars', array(&$this,
             'query_vars'
         ));
@@ -57,7 +50,6 @@ class Featured_Post
         add_filter('current_screen', array(&$this,
             'my_current_screen'
         ));
-
         add_action('admin_head-edit.php', array(&$this,
             'admin_head'
         ));
@@ -78,12 +70,18 @@ class Featured_Post
                 'manage_posts_custom_column'
             ) , 10, 2);
         }
+        add_action( 'post_submitbox_misc_actions', array(&$this,
+            'edit_screen_featured_ui'
+        ));
+        add_action( 'save_post', array(&$this,
+            'edit_screen_featured_save'
+        ));
     }
     function add_views_link($views) {
         $post_type = ((isset($_GET['post_type']) && $_GET['post_type'] != "") ? $_GET['post_type'] : 'post');
         $count = $this->total_featured($post_type);
         $class =  (isset($_GET['post_status']) && $_GET['post_status'] == 'featured') ? "current" : '';
-        $views['featured'] = "<a class=\"" . $class . "\" id=\"featured-post-filter\" href=\"edit.php?&post_status=featured&post_type={$post_type}\">Featured <span class=\"count\">({$count})</span></a>";
+        $views['featured'] = "<a class=\"" . $class . "\" id=\"featured-post-filter\" href=\"edit.php?&post_status=featured&post_type={$post_type}\">" . __( 'Featured', 'featured-post' ) . "<span class=\"count\">({$count})</span></a>";
         return $views;
     }
     function total_featured($post_type = "post") {
@@ -124,12 +122,11 @@ class Featured_Post
         global $current_user;
         get_currentuserinfo();
         if (current_user_can('edit_posts', $user_id)) {
-            $columns['featured'] = __('Featured');
+            $columns['featured'] = __('Featured', 'featured-post' );
         }
         return $columns;
     }
     function manage_posts_custom_column($column_name, $post_id) {
-
         //echo "here";
         if ($column_name == 'featured') {
             $is_featured = get_post_meta($post_id, '_is_featured', true);
@@ -145,31 +142,28 @@ class Featured_Post
         }
     }
     function admin_head() {
-
         echo '<script type="text/javascript">
-		jQuery(document).ready(function($){
-			$(\'.featured-post-toggle\').on("click",function(e){
-				e.preventDefault();
-				var _el=$(this);
-				var post_id=$(this).attr(\'data-post-id\');
-				var data={action:\'toggle-featured-post\',post_id:post_id};
-				$.ajax({url:ajaxurl,data:data,type:\'post\',
-					dataType:\'json\',
-					success:function(data){
-					_el.removeClass(\'dashicons-star-filled\').removeClass(\'dashicons-star-empty\');
-					$("#featured-post-filter span.count").text("("+data.total_featured+")");
-					if(data.new_status=="yes"){
-						_el.addClass(\'dashicons-star-filled\');
-					}else{
-						_el.addClass(\'dashicons-star-empty\');
-					}
-					}
-
-
-				});
-			});
-		});
-		</script>';
+        jQuery(document).ready(function($){
+            $(\'.featured-post-toggle\').on("click",function(e){
+                e.preventDefault();
+                var _el=$(this);
+                var post_id=$(this).attr(\'data-post-id\');
+                var data={action:\'toggle-featured-post\',post_id:post_id};
+                $.ajax({url:ajaxurl,data:data,type:\'post\',
+                    dataType:\'json\',
+                    success:function(data){
+                    _el.removeClass(\'dashicons-star-filled\').removeClass(\'dashicons-star-empty\');
+                    $("#featured-post-filter span.count").text("("+data.total_featured+")");
+                    if(data.new_status=="yes"){
+                        _el.addClass(\'dashicons-star-filled\');
+                    }else{
+                        _el.addClass(\'dashicons-star-empty\');
+                    }
+                    }
+                });
+            });
+        });
+        </script>';
     }
     function admin_ajax() {
         header('Content-Type: application/json');
@@ -206,14 +200,37 @@ class Featured_Post
         }
         return $query;
     }
+
+    function edit_screen_featured_ui() {
+    // global $typenow;
+    if ( is_admin() ) { //Post types could be defined here ( $typenow == 'post' )
+        echo '<div class="misc-pub-section"><span style="color:#999; margin: -2px 2px 0 -1px;" class="dashicons dashicons-star-filled"></span>' . "\n";
+        echo '<label for="featured" title="' . esc_attr__( 'If checked, this is marked as featured.', 'featured-post' ) . '">' . "\n";
+        echo __( 'Featured?', 'featured-post' ) . ' <input id="featured"" type="checkbox" value="yes" ' . checked( get_post_meta( get_the_ID(), '_is_featured', true ), 'yes', false ) . ' name="featured" /></label></div>' . "\n";
+    }
+    }
+    function edit_screen_featured_save( $post_id ) {
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+            return;
+        }
+        if ( !current_user_can( 'edit_post', $post_id ) ) {
+            return;
+        }
+
+        if ( isset( $_POST['featured'] ) ) {
+            update_post_meta( $post_id, '_is_featured', esc_attr( $_POST['featured'] ) );
+        }
+    }
+    function load_featured_textdomain() {
+        load_plugin_textdomain( 'featured-post', false, dirname( plugin_basename( __FILE__ ) ) . '/langs/' );
+    }
 }
 class Featured_Post_Widget extends WP_Widget
 {
     private $post_types = array();
     function __construct() {
-        parent::WP_Widget(false, $name = 'Featured Post');
+        parent::WP_Widget(false, $name = __( 'Featured Post', 'featured-post' ) );
     }
-
     function form($instance) {
         $title = esc_attr($instance['title']);
         $type = esc_attr($instance['post_type']);
@@ -226,25 +243,23 @@ class Featured_Post_Widget extends WP_Widget
         ksort($this->post_types);
         echo "<p>";
         echo "<label for=\"" . $this->get_field_id('title') . "\">";
-        echo _e('Title:');
+        echo _e('Title') .':';
         echo "</label>";
         echo "<input class=\"widefat\" id=\"" . $this->get_field_id('title') . "\" name=\"" . $this->get_field_name('title') . "\" type=\"text\" value=\"" . $title . "\" />";
         echo "</p>";
         echo "<p>";
         echo "<label for=\"" . $this->get_field_id('post_type') . "\">";
-        echo _e('Post Type:');
+        echo _e('Post Type', 'featured-post') . ':';
         echo "</label>";
         echo "<select name = \"" . $this->get_field_name('post_type') . "\" id=\"" . $this->get_field_id('title') . "\" >";
         foreach ($this->post_types as $key => $post_type) {
             echo '<option value="' . $key . '"' . ($key == $type ? " selected" : "") . '>' . $key . "</option>";
         }
-
         echo "</select>";
         echo "</p>";
         echo "<p>";
         echo "<label for=\"" . $this->get_field_id('num') . "\">";
-        echo _e('Number To show:');
-
+        echo _e('Number To show:', 'featured-post');
         echo "</label>";
         echo "<input id = \"" . $this->get_field_id('num') . "\" class = \"widefat\" name = \"" . $this->get_field_name('num') . "\" type=\"text\" value =\"" . $num . "\" / >";
         echo "</p>";

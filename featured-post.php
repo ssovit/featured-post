@@ -78,6 +78,9 @@ class Featured_Post
                 'manage_posts_custom_column'
             ) , 10, 2);
         }
+        add_action( 'post_submitbox_misc_actions', 'edit_screen_featured_ui' );
+    	add_action( 'save_post', 'edit_screen_featured_save' );
+    	add_action( 'plugins_loaded', 'load_textdomain' );
     }
     function add_views_link($views) {
         $post_type = ((isset($_GET['post_type']) && $_GET['post_type'] != "") ? $_GET['post_type'] : 'post');
@@ -206,6 +209,30 @@ class Featured_Post
         }
         return $query;
     }
+    
+    function edit_screen_featured_ui() {
+	// global $typenow;
+	if ( is_admin() ) { //Post types could be defined here ( $typenow == 'post' )
+	    echo '<div class="misc-pub-section">' . "\n";
+	    echo '<label for="featured" title="' . esc_attr__( 'If checked, this is marked as featured.', 'featured-post' ) . '">' . "\n";
+	    echo '<input id="featured"" type="checkbox" value="yes" ' . checked( get_post_meta( get_the_ID(), '_is_featured', true ), 'yes', false ) . ' name="featured" />' . "\n";
+	    echo __( 'Featured?', 'featured-post' ) . '</label></div>' . "\n";
+	}
+    }
+    function edit_screen_featured_save( $post_id ) {
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE || !current_user_can( 'edit_post', $post_id ) ) {
+            return;
+        }
+        if ( isset( $_POST['featured'] ) ) {
+            update_post_meta( $post_id, '_is_featured', esc_attr( $_POST['featured'] ) );
+        } else {
+            update_post_meta( $post_id, '_is_featured', 'no' );
+        }
+    }
+    function load_textdomain() {
+    	load_plugin_textdomain( 'featured-post', false, dirname( plugin_basename( __FILE__ ) ) . '/langs/' );
+    }
+
 }
 class Featured_Post_Widget extends WP_Widget
 {

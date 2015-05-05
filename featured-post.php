@@ -47,6 +47,17 @@ class Featured_Post
         ));
     }
     function admin_init() {
+        /* Set the new post to 'featured=no' when it's created */ 
+        add_action('new_to_publish', array(&$this,
+            'set_not_featured'
+        ), 1, 2);
+        add_action('draft_to_publish', array(&$this,
+            'set_not_featured'
+        ), 1, 2);
+        add_action('pending_to_publish', array(&$this,
+            'set_not_featured'
+        ), 1, 2);
+
         add_filter('current_screen', array(&$this,
             'my_current_screen'
         ));
@@ -178,6 +189,14 @@ class Featured_Post
             'total_featured' => $this->total_featured(get_post_type($post_id))
         ));
         die();
+    }  
+    /**
+     * set_not_featured()
+     *
+     * Sets the value of 'featured' to 'no' right after the post creation
+     */
+    function set_not_featured($post_id) {      
+        add_post_meta($post_id, '_is_featured', 'no');
     }
     function admin_pre_get_posts($query) {
         global $wp_query;

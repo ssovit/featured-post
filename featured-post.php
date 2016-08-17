@@ -3,7 +3,7 @@
 Plugin Name: Featured Post
 Plugin URI: https://github.com/WPPress/featured-post
 Description: Featured Post Plugin For Wordpress.
-Version: 3.2.1
+Version: 3.5.0
 Author: Sovit Tamrakar
 Author URI: http://wppress.net
  **************************************************************************

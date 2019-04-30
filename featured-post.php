@@ -251,9 +251,48 @@ class Featured_Post
             //Post types could be defined here ( $typenow == 'post' )
             echo '<div class="misc-pub-section"><span style="color:#999; margin: -2px 2px 0 -1px;" class="dashicons dashicons-star-filled"></span>' . "\n";
             echo '<label for="featured" title="' . esc_attr__('If checked, this is marked as featured.', 'featured-post') . '">' . "\n";
-            echo __('Featured?', 'featured-post') . ' <input id="featured"" type="checkbox" value="yes" ' . checked(get_post_meta(get_the_ID(), '_is_featured', true), 'yes', false) . ' name="featured" /></label></div>' . "\n";
+            echo __('Featured?', 'featured-post') . ' <input id="featured"" onclick="validateFeaturedCheckbox(this.form)" type="checkbox" value="yes" ' . checked(get_post_meta(get_the_ID(), '_is_featured', true), 'yes', false) . ' name="featured" /></label></div>' . "\n";
+
+            /**
+             * The edit_screen_featured_save() method checks if
+             * $_POST['featured'] isset, but it won't be set if
+             * the featured checkbox isn't checked.
+             *
+             * Create a hidden input with the value of 'no'
+             * if the featured checkbox isn't checked.
+             */
+            echo <<<CHECKBOXVALIDATION
+            
+            <script>
+            
+                function validateFeaturedCheckbox(form) {
+                    
+                    if (document.getElementById('featured').checked) {
+                        
+                        document.getElementById('featuredHiddenCheckbox').remove();
+                        
+                    } else {
+                        
+                        let input = document.createElement('input');
+                    
+                        input.type = 'hidden';
+                        input.id = 'featuredHiddenCheckbox';
+                        input.name = 'featured';
+                        input.value = 'no';
+                        
+                        form.appendChild(input);
+                        
+                    }
+                    
+                }
+            
+            </script>
+
+CHECKBOXVALIDATION;
+
         }
     }
+
     public function edit_screen_featured_save($post_id)
     {
         if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
